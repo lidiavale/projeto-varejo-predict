@@ -1,0 +1,7 @@
+functions-framework
+google-cloud-storage
+pandas
+gspread
+oauth2client
+fsspec
+gcsfs
