@@ -6,7 +6,7 @@ Este projeto implementa um pipeline completo de **Lakehouse** e **MLOps** no Goo
 
 A solução segue o fluxo **Ingestão -> Processamento -> Machine Learning -> Aplicação**.
 
-![Arquitetura da Solução](docs/arquitetura_varejo_predict.png)
+![Arquitetura da Solução](docs/arquitetura_varejo_predict_(final).png)
 
 ### Componentes:
 1.  **Ingestão (Cloud Functions + Scheduler):** Script Python que roda diariamente (06:00 AM), consulta a API Brasil para verificar feriados e simula dados de vendas, salvando JSONs no Cloud Storage (Data Lake).
