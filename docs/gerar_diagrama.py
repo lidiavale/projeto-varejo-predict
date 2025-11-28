@@ -4,41 +4,54 @@ from diagrams.gcp.compute import Functions, Run
 from diagrams.gcp.devtools import Scheduler
 from diagrams.gcp.storage import GCS
 from diagrams.onprem.client import User
-from diagrams.generic.network import Firewall
+from diagrams.saas.filesharing import Drive # Representando o Google Sheets
 
-# Configuração do Diagrama
+# Configuração Visual
 graph_attr = {
     "fontsize": "20",
-    "bgcolor": "white"
+    "bgcolor": "white",
+    "pad": "0.5"
 }
 
-with Diagram("Arquitetura Varejo Predict", show=False, direction="LR", graph_attr=graph_attr):
+with Diagram("Arquitetura Varejo Predict (Final)", show=False, direction="LR", graph_attr=graph_attr):
     
-    usuario = User("Gestor/Usuário")
-
+    # Atores
+    gestor = User("Gestor/Usuário")
+    lojista = User("Lojista\n(Input Manual)")
+    
     # Grupo de Ingestão
-    with Cluster("Ingestão Automatizada"):
-        gatilho = Scheduler("Cloud Scheduler\n(06:00 AM)")
-        coleta = Functions("Cloud Functions\n(Coleta + API Feriados)")
-    
+    with Cluster("Ingestão Híbrida"):
+        planilha = Drive("Google Sheets\n(Vendas Diárias)")
+        gatilho = Scheduler("Cloud Scheduler\n(Trigger 06:00)")
+        coleta = Functions("Cloud Function\n(Coletor Python)")
+        
     # Grupo de Dados
-    with Cluster("Plataforma de Dados (Lakehouse)"):
-        datalake = GCS("Cloud Storage\n(Raw JSON)")
-        warehouse = BigQuery("BigQuery\n(Tabelas Externas + Gold)")
-        ml_model = BigQuery("BigQuery ML\n(Modelo ARIMA)")
+    with Cluster("Lakehouse (Storage + BQ)"):
+        datalake = GCS("Cloud Storage\n(Raw JSONL)")
+        dw = BigQuery("BigQuery\n(Tabelas Gold)")
+        
+        with Cluster("Múltiplos Modelos IA"):
+            ml_qtd = BigQuery("ARIMA\n(Estoque/Qtd)")
+            ml_fin = BigQuery("ARIMA\n(Financeiro/R$)")
 
     # Grupo de Aplicação
     with Cluster("Aplicação Serverless"):
-        frontend = Run("Frontend\n(Streamlit)")
+        frontend = Run("Frontend\n(Streamlit com Abas)")
         backend = Run("Backend API\n(FastAPI)")
 
     # Fluxo de Ingestão
-    gatilho >> Edge(label="HTTP Trigger") >> coleta 
+    lojista >> Edge(label="Preenche") >> planilha
+    gatilho >> Edge(label="Aciona") >> coleta
+    planilha >> Edge(label="Leitura via API") >> coleta
     coleta >> Edge(label="Salva JSON") >> datalake
-    datalake >> Edge(label="Leitura Direta") >> warehouse
-    warehouse - Edge(style="dotted") - ml_model # Conexão lógica
+    
+    # Fluxo de Dados
+    datalake >> Edge(label="External Table") >> dw
+    dw - Edge(style="dotted") - ml_qtd
+    dw - Edge(style="dotted") - ml_fin
 
     # Fluxo do Usuário
-    usuario >> Edge(label="Acessa Dashboard") >> frontend
+    gestor >> Edge(label="HTTPS") >> frontend
     frontend >> Edge(label="POST /predict") >> backend
-    backend >> Edge(label="SQL Query") >> ml_model
+    backend >> Edge(label="Query Dupla") >> ml_qtd
+    backend >> Edge(label="Query Dupla") >> ml_fin
