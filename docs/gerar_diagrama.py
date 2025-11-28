@@ -3,8 +3,7 @@ from diagrams.gcp.analytics import BigQuery
 from diagrams.gcp.compute import Functions, Run
 from diagrams.gcp.devtools import Scheduler
 from diagrams.gcp.storage import GCS
-from diagrams.onprem.client import User
-from diagrams.saas.filesharing import Drive # Representando o Google Sheets
+from diagrams.onprem.client import User, Client # <--- Mudança aqui
 
 # Configuração Visual
 graph_attr = {
@@ -21,7 +20,8 @@ with Diagram("Arquitetura Varejo Predict (Final)", show=False, direction="LR", g
     
     # Grupo de Ingestão
     with Cluster("Ingestão Híbrida"):
-        planilha = Drive("Google Sheets\n(Vendas Diárias)")
+        # Usamos Client para representar o App do Sheets
+        planilha = Client("Google Sheets\n(Vendas Diárias)") 
         gatilho = Scheduler("Cloud Scheduler\n(Trigger 06:00)")
         coleta = Functions("Cloud Function\n(Coletor Python)")
         
